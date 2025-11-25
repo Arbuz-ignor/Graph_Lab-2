@@ -196,8 +196,124 @@ public class Graph<V> {
         bfsOrder(start, null);
     }
 
+    //Алгоритм Дейкстра
+    public DynamicArray<V> shortestPath(V start, V goal) {
+        ensureVertexExists(start);
+        ensureVertexExists(goal);
+        HashMap<V, Double> dist = new HashMap<>(); //расстояния до вершин
+        HashMap<V, V> prev = new HashMap<>();      //предки для восстановления пути
+        DynamicArray<V> unvisited = new DynamicArray<>(); //множество непосещённых
+        for (V v : vertices()) {
+            dist.put(v, Double.POSITIVE_INFINITY);
+            prev.put(v, null);
+            unvisited.append(v);
+        }
+        dist.put(start, 0.0);
 
+        // пока есть непосещённые вершины
+        while (unvisited.size() > 0) {
+            //выбираем вершину с минимальной текущей дистанцией
+            int minIndex = 0;
+            V minVertex = unvisited.get(0);
+            double minDist = dist.get(minVertex);
 
+            for (int i = 1; i < unvisited.size(); i++) {
+                V v = unvisited.get(i);
+                double d = dist.get(v);
+                if (d < minDist) {
+                    minDist = d;
+                    minVertex = v;
+                    minIndex = i;
+                }
+            }
 
+            V v = minVertex;
+            unvisited.removeAt(minIndex);
+
+            //если достигли цели выходим
+            if (v.equals(goal) || minDist == Double.POSITIVE_INFINITY) {
+                break;
+            }
+            DynamicArray<Edge<V>> edges = adj.get(v);
+            //рассматриваем все рёбра v к u
+            for (int i = 0; i < edges.size(); i++) {
+                Edge<V> e = edges.get(i);
+                V u = e.getTo();
+                double alt = dist.get(v) + e.getWeight(); //альтернативный путь через v
+                double du = dist.get(u);
+                if (alt < du) {
+                    dist.put(u, alt);
+                    prev.put(u, v);
+                }
+            }
+        }
+
+        double dGoal = dist.get(goal);
+        if (Double.isInfinite(dGoal)) {
+            throw new GraphError(
+                    "Кратчайший путь от '" + start + "' до '" + goal + "' не существует"
+            );
+        }
+
+        //восстанавливаем путь от goal к start по prev
+        DynamicArray<V> path = new DynamicArray<>();
+        V cur = goal;
+        while (cur != null) {
+            path.append(cur);
+            cur = prev.tryGet(cur);
+        }
+
+        //разворачиваем массив, чтобы путь шёл от start к goal
+        int i = 0;
+        int j = path.size() - 1;
+        while (i < j) {
+            V a = path.get(i);
+            V b = path.get(j);
+            path.set(i, b);
+            path.set(j, a);
+            i++;
+            j--;
+        }
+
+        return path;
+    }
+
+    //посчитать суммарный вес пути
+    public int pathWeight(DynamicArray<V> path) {
+        if (path.size() < 2) {
+            return 0;
+        }
+
+        int total = 0;
+
+        for (int i = 0; i < path.size() - 1; i++) {
+            V from = path.get(i);
+            V to = path.get(i + 1);
+
+            DynamicArray<Edge<V>> edges = edgesFrom(from);
+            boolean found = false;
+
+            for (Edge<V> e : edges) {
+                if (e.getTo().equals(to)) {
+                    total += e.getWeight();
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                throw new GraphError("Не найдено ребро " +
+                        from + " -> " + to + " при подсчёте длины пути");
+            }
+        }
+
+        return total;
+    }
 
 }
+
+
+
+
+
+
