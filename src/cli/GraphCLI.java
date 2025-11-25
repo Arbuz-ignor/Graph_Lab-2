@@ -164,31 +164,32 @@ public class GraphCLI {
         System.out.println();
     }
     private void actionShortestPath() {
-        System.out.print("Старт: ");
+        System.out.print("Начальная вершина: ");
         String start = scanner.nextLine().trim();
-        if (start.isEmpty()) {
-            throw new GraphError("Название вершины не может быть пустым");
-        }
-        System.out.print("Конец: ");
-        String end = scanner.nextLine().trim();
-        if (end.isEmpty()) {
-            throw new GraphError("Название вершины не может быть пустым");
-        }
-        DynamicArray<String> path = graph.shortestPath(start, end);
+        System.out.print("Конечная вершина: ");
+        String goal = scanner.nextLine().trim();
+        try {
+            //получаем путь
+            DynamicArray<String> path = graph.shortestPath(start, goal);
+            //получаем длину пути
+            int length = graph.pathWeight(path);
+            System.out.print("Кратчайший путь: ");
+            //выводим последовательность вершин через
+            for (int i = 0; i < path.size(); i++) {
+                System.out.print(path.get(i));
+                if (i < path.size() - 1) {
+                    System.out.print(" -> ");
+                }
+            }
+            System.out.println(); //перенос строки после пути
+            //выводим длину пути
+            System.out.println("Длина пути: " + length);
 
-        if (path.size() == 0) {
-            System.out.println("Пути от '" + start + "' до '" + end + "' не существует");
-            return;
+        } catch (GraphError e) {
+            System.out.println("Ошибка: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("Неизвестная ошибка: " + e.getMessage());
         }
-
-        System.out.print("Путь: ");
-        for (String v : path) {
-            System.out.print(v + " ");
-        }
-        System.out.println();
-
-        int dist = graph.pathWeight(path);
-        System.out.println("Общая длина пути (сумма весов): " + dist);
     }
     private void actionSaveToFile() {
         System.out.print("Файл: ");
