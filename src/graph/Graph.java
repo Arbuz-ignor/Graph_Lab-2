@@ -11,9 +11,11 @@ public class Graph<V> {
         this.adj = new HashMap<>();
     }
 
-    public Graph() { this(true); } //по умолчанию ориентированный
+    public Graph() {
+        this(true); } //по умолчанию ориентированный
 
-    public boolean isDirected() { return directed; }
+    public boolean isDirected() {
+        return directed; }
 
     public void addVertex(V v) {
         if (adj.containsKey(v)) throw new GraphError("Вершина '" + v + "' уже существует");
@@ -22,8 +24,102 @@ public class Graph<V> {
 
     //важно проверить наличие вершины перед любой операцией
     private void ensureVertexExists(V v) {
-        if (!adj.containsKey(v)) throw new GraphError("Вершина '" + v + "' не найдена");
+        if (!adj.containsKey(v)) {
+            throw new GraphError("Вершина '" + v + "' не существует в графе");
+        }
     }
 
-    public Iterable<V> vertices() { return adj.keys(); }
+    public DynamicArray<Edge<V>> edgesFrom(V v) {
+        ensureVertexExists(v);
+        return adj.get(v);
+    }
+
+    public Iterable<V> vertices() {
+        return adj.keys(); }
+
+    public void addEdge(V from, V to, int weight)
+    {
+        if (weight < 0) throw new GraphError("Вес не может быть отрицательным");
+        //автоматически создаем вершины, если их нет
+        if (!adj.containsKey(from)) addVertex(from);
+        if (!adj.containsKey(to)) addVertex(to);
+
+        //проверка дубликатов
+        for (Edge<V> e : adj.get(from))
+        {
+            if (e.getTo().equals(to)) throw new GraphError("Ребро уже есть");
+        }
+
+        adj.get(from).append(new Edge<>(to, weight));
+
+        //если граф неориентированный, добавляем обратное ребро
+        if (!directed && !from.equals(to))
+        {
+            adj.get(to).append(new Edge<>(from, weight));
+        }
+    }
+
+    public void removeVertex(V v)
+    {
+        ensureVertexExists(v);
+        adj.remove(v); //удаляем саму вершину и исходящие
+        //проходим по всем остальным вершинам и удаляем ребра, ведущие в v
+        for (V u : vertices())
+        {
+            DynamicArray<Edge<V>> edges = adj.get(u);
+            if (edges == null) continue;
+            int i = 0;
+            while (i < edges.size()) {
+                if (edges.get(i).getTo().equals(v)) {
+                    edges.removeAt(i);
+                } else {
+                    i++;
+                }
+            }
+        }
+    }
+
+    // удалить направленное ребро из u в v
+    private void removeSingleDirected(V u, V v) {
+        DynamicArray<Edge<V>> edges = adj.get(u);
+        int idx = 0;
+        boolean removed = false;
+        while (idx < edges.size()) {
+            Edge<V> e = edges.get(idx);
+            if (e.getTo().equals(v)) {
+                edges.removeAt(idx);
+                removed = true;
+                break;
+            } else {
+                idx++;
+            }
+        }
+        if (!removed) {
+            throw new GraphError("Ребро '" + u + "' -> '" + v + "' не найдено в графе");
+        }
+    }
+
+    public void removeEdge(V from, V to) {
+        ensureVertexExists(from);
+        ensureVertexExists(to);
+
+        removeSingleDirected(from, to);
+        if (!directed && !from.equals(to)) {
+            removeSingleDirected(to, from);
+        }
+    }
+
+    //получить список соседей вершины
+    public DynamicArray<V> getAdjacent(V v) {
+        ensureVertexExists(v);
+        DynamicArray<Edge<V>> edges = adj.get(v);
+        DynamicArray<V> result = new DynamicArray<>();
+        for (Edge<V> e : edges) {
+            result.append(e.getTo());
+        }
+        return result;
+    }
+
+
+
 }
