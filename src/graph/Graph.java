@@ -2,6 +2,9 @@ package graph;
 import exceptions.GraphError;
 import structures.DynamicArray;
 import structures.HashMap;
+import structures.Queue;
+import structures.Stack;
+import java.util.function.Consumer;
 public class Graph<V> {
     private final boolean directed;
     //cписок смежности ключ - вершина, значение - список исходящих ребер
@@ -119,6 +122,81 @@ public class Graph<V> {
         }
         return result;
     }
+
+    //DFS используем Stack
+    private DynamicArray<V> dfsOrder(V start, Consumer<V> visit) {
+        ensureVertexExists(start);
+        HashMap<V, Boolean> visited = new HashMap<>();
+        DynamicArray<V> order = new DynamicArray<>();
+        Stack<V> stack = new Stack<>();
+        stack.push(start);
+        while (!stack.isEmpty()) {
+            V v = stack.pop();
+            if (visited.containsKey(v)) {
+                continue;  // уже были
+            }
+            visited.put(v, Boolean.TRUE);
+            order.append(v);
+            if (visit != null) {
+                visit.accept(v);
+            }
+            //добавляем соседей в стек
+            //в обратном порядке
+            DynamicArray<V> neighbors = getAdjacent(v);
+            for (int i = neighbors.size() - 1; i >= 0; i--) {
+                V u = neighbors.get(i);
+                if (!visited.containsKey(u)) {
+                    stack.push(u);
+                }
+            }
+        }
+        return order;
+    }
+
+    //порядок обхода
+    public DynamicArray<V> dfsOrder(V start) {
+        return dfsOrder(start, null);
+    }
+    public void dfs(V start) {
+        dfsOrder(start, null);
+    }
+
+
+    //BFS используем очередь
+    private DynamicArray<V> bfsOrder(V start, Consumer<V> visit) {
+        ensureVertexExists(start);
+        HashMap<V, Boolean> visited = new HashMap<>();
+        DynamicArray<V> order = new DynamicArray<>();
+        Queue<V> queue = new Queue<>();
+        visited.put(start, Boolean.TRUE);
+        queue.enqueue(start);
+        while (!queue.isEmpty()) {
+            V v = queue.dequeue();
+            order.append(v);
+            if (visit != null) {
+                visit.accept(v);
+            }
+            DynamicArray<V> neighbors = getAdjacent(v);
+            for (int i = 0; i < neighbors.size(); i++) {
+                V u = neighbors.get(i);
+                if (!visited.containsKey(u)) {
+                    visited.put(u, Boolean.TRUE);
+                    queue.enqueue(u);
+                }
+            }
+        }
+        return order;
+    }
+    //порядок обхода
+    public DynamicArray<V> bfsOrder(V start) {
+        return bfsOrder(start, null);
+    }
+
+    public void bfs(V start) {
+        bfsOrder(start, null);
+    }
+
+
 
 
 
